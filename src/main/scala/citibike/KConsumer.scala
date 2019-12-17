@@ -1,45 +1,48 @@
 package citibike
 
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.{ArrayType, DoubleType, IntegerType, LongType, ObjectType, StringType, StructType}
-import org.joda.time.DateTime
+import org.apache.spark.sql.types._
 
 
 object KConsumer {
   val hdfs_master = "/Users/sgcindy.zhang/Documents/Training_Projects/hadoop-3.1.3/"
-//    val hdfs_master = "hdfs://localhost:9000/"
+  //    val hdfs_master = "hdfs://localhost:9000/"
 
   def main(args: Array[String]): Unit = {
+    val bootstrapServers = "localhost:9092"
+    val cityStationsSchema = getCityStationsSchema()
 
     val spark = SparkSession.builder().appName("Citibike Data Ingestion App").master("local[*]").getOrCreate()
     val df = spark
-      .read
+      .readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", "localhost:9092")
+      .option("kafka.bootstrap.servers", bootstrapServers)
       .option("subscribe", "test")
       .option("startingOffsets", "earliest")
       .load()
 
-    val dfCol = df.selectExpr("CAST(value AS STRING) as raw_payload").collect()
-    dfCol.map(print)
-
-    df.select(col("value").cast("string")).show()
-    val cityStationsSchema = getCityStationsSchema()
     val result = df.select(from_json(col("value").cast("string"), cityStationsSchema)
       .as("data"))
       .select("data.network.*")
 
-    result.show()
 
-    val path = "user/hdfs/wiki/testwiki3"
+    val path = "user/hdfs/wiki/testwiki2"
 
-    result.write.mode(SaveMode.Overwrite).parquet(hdfs_master + path)
-    val df_parquet = spark.read.parquet(hdfs_master + path)
-    df_parquet.show()
+    val query = result.writeStream
+      .outputMode("append")
+      .format("parquet")
+      .option("path", hdfs_master + path)
+      .option("checkpointLocation", hdfs_master + "/tmp/checkpoint")
+      .start()
+    //    val df_parquet = spark.read.parquet(hdfs_master + path)
+    //    df_parquet.show()
+
+    query.awaitTermination()
 
   }
-  def getCityStationsSchema(): StructType ={
+
+  def getCityStationsSchema(): StructType = {
     val stationStruct = (new StructType)
       .add("id", StringType, false)
       .add("name", StringType, false)
