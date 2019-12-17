@@ -24,6 +24,22 @@ object KConsumer {
     val dfCol = df.selectExpr("CAST(value AS STRING) as raw_payload").collect()
     dfCol.map(print)
 
+    df.select(col("value").cast("string")).show()
+    val cityStationsSchema = getCityStationsSchema()
+    val result = df.select(from_json(col("value").cast("string"), cityStationsSchema)
+      .as("data"))
+      .select("data.network.*")
+
+    result.show()
+
+    val path = "user/hdfs/wiki/testwiki3"
+
+    result.write.mode(SaveMode.Overwrite).parquet(hdfs_master + path)
+    val df_parquet = spark.read.parquet(hdfs_master + path)
+    df_parquet.show()
+
+  }
+  def getCityStationsSchema(): StructType ={
     val stationStruct = (new StructType)
       .add("id", StringType, false)
       .add("name", StringType, false)
@@ -57,22 +73,7 @@ object KConsumer {
       .add("source", StringType, false)
       .add("stations", new ArrayType(stationStruct, false), false)
 
-    val cityStationsSchema = (new StructType)
+    (new StructType)
       .add("network", netWorkStruct, false)
-
-    df.select(col("value").cast("string")).show()
-
-    val result = df.select(from_json(col("value").cast("string"), cityStationsSchema)
-      .as("data"))
-      .select("data.network.*")
-
-    result.show()
-
-    val path = "user/hdfs/wiki/testwiki1"
-
-//    result.write.mode(SaveMode.Overwrite).parquet(hdfs_master + path)
-    val df_parquet = spark.read.parquet(hdfs_master + path)
-    df_parquet.show()
-
   }
 }
