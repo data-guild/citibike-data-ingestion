@@ -1,5 +1,6 @@
 package citibike
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
@@ -8,9 +9,11 @@ import org.apache.spark.sql.types._
 object KConsumer {
   val hdfs_master = "/Users/sgcindy.zhang/Documents/Training_Projects/hadoop-3.1.3/"
   //    val hdfs_master = "hdfs://localhost:9000/"
-
+  val topic = "citibike"
   def main(args: Array[String]): Unit = {
     val bootstrapServers = "localhost:9092"
+    Logger.getLogger("org").setLevel(Level.ERROR)
+
     val cityStationsSchema = getCityStationsSchema()
 
     val spark = SparkSession.builder().appName("Citibike Data Ingestion App").master("local[*]").getOrCreate()
@@ -18,7 +21,7 @@ object KConsumer {
       .readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", bootstrapServers)
-      .option("subscribe", "test")
+      .option("subscribe", topic)
       .option("startingOffsets", "earliest")
       .load()
 
@@ -27,7 +30,7 @@ object KConsumer {
       .select("data.network.*")
 
 
-    val path = "user/hdfs/wiki/testwiki2"
+    val path = "user/hdfs/wiki/testwiki5"
 
     val query = result.writeStream
       .outputMode("append")
@@ -35,8 +38,8 @@ object KConsumer {
       .option("path", hdfs_master + path)
       .option("checkpointLocation", hdfs_master + "/tmp/checkpoint")
       .start()
-    //    val df_parquet = spark.read.parquet(hdfs_master + path)
-    //    df_parquet.show()
+//        val df_parquet = spark.read.parquet(hdfs_master + path)
+//        df_parquet.show()
 
     query.awaitTermination()
 
