@@ -10,6 +10,7 @@ object KConsumer {
   val hdfs_master = "/Users/sgcindy.zhang/Documents/Training_Projects/hadoop-3.1.3/"
   //    val hdfs_master = "hdfs://localhost:9000/"
   val topic = "citibike"
+
   def main(args: Array[String]): Unit = {
     val bootstrapServers = "localhost:9092"
     Logger.getLogger("org").setLevel(Level.ERROR)
@@ -29,19 +30,30 @@ object KConsumer {
       .as("data"))
       .select("data.network.*")
 
+    val cityInfoColumnNames = Seq("company", "href", "id", "license", "location", "name", "source")
 
-    val path = "user/hdfs/wiki/testwiki5"
+    val cityInfo = result.select(cityInfoColumnNames.map(c => col(c)): _*)
 
-    val query = result.writeStream
+    val cityPath = "user/hdfs/wiki/city_info"
+
+    val cityInfoQuery = cityInfo.writeStream
       .outputMode("append")
       .format("parquet")
-      .option("path", hdfs_master + path)
-      .option("checkpointLocation", hdfs_master + "/tmp/checkpoint")
+      .option("path", hdfs_master + cityPath)
+      .option("checkpointLocation", hdfs_master + "/tmp/checkpoint/city_info")
       .start()
-//        val df_parquet = spark.read.parquet(hdfs_master + path)
-//        df_parquet.show()
 
-    query.awaitTermination()
+    val stationsPath = "user/hdfs/wiki/stations1"
+
+    val stationsQuery = result.select(explode(col("stations")).alias("station")).select("station.*").writeStream
+      .outputMode("append")
+      .format("parquet")
+      .option("path", hdfs_master + stationsPath)
+      .option("checkpointLocation", hdfs_master + "/tmp/checkpoint/stations1")
+      .start()
+
+    cityInfoQuery.awaitTermination()
+    stationsQuery.awaitTermination()
 
   }
 
