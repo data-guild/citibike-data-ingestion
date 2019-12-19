@@ -23,13 +23,14 @@ object KConsumer {
       .option("startingOffsets", "earliest")
       .load()
 
-    val result = df.select(from_json(col("value").cast("string"), cityStationsSchema)
+
+    val rawData = df.select(from_json(col("value").cast("string"), cityStationsSchema)
       .as("data"))
       .select("data.network.*")
 
     val cityInfoColumnNames = Seq("company", "href", "id", "license", "location", "name", "source")
-
-    val cityInfo = result.select(cityInfoColumnNames.map(c => col(c)): _*)
+    val cityInfo = rawData.select(cityInfoColumnNames.map(c => col(c)): _*)
+    val stationsInfo = rawData.select(col("id") as "city_id",explode(col("stations")) as "station")
 
 
     val cityInfoQuery = cityInfo.writeStream
@@ -39,7 +40,8 @@ object KConsumer {
       .option("checkpointLocation", Constants.CITY_CHECKPOINT_PATH)
       .start()
 
-    val stationsQuery = result.select(explode(col("stations")).alias("station")).select("station.*").writeStream
+     val stationsQuery = stationsInfo.select("city_id", "station.*")
+      .writeStream
       .outputMode("append")
       .format("parquet")
       .option("path", Constants.STATIONS_HDFS_PATH)
