@@ -4,48 +4,60 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
+import pureconfig.ConfigSource
 
 
 object KConsumer {
-  val topic = "citibike"
 
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
-    val cityStationsSchema = getCityStationsSchema()
+    val appConfig = ConfigLoader.loadConfig(ConfigSource.default)
 
-    val spark = SparkSession.builder().appName("Citibike Data Ingestion App").master("local[*]").getOrCreate()
+    val spark = SparkSession
+      .builder()
+      .appName("Citibike Data Ingestion App")
+      .master("local[*]")
+      .getOrCreate()
+
     val df = spark
       .readStream
       .format("kafka")
-      .option("kafka.bootstrap.servers", Constants.BOOTSTRAP_SERVERS)
-      .option("subscribe", topic)
+      .option("kafka.bootstrap.servers",
+        s"${appConfig.kafka.server}:${appConfig.kafka.port}")
+      .option("subscribe", appConfig.topic.name)
       .option("startingOffsets", "earliest")
       .load()
 
-
-    val rawData = df.select(from_json(col("value").cast("string"), cityStationsSchema)
+    val cityStationsSchema = getCityStationsSchema()
+    val rawData = df
+      .select(from_json(col("value").cast("string"), cityStationsSchema)
       .as("data"))
       .select("data.network.*")
 
     val cityInfoColumnNames = Seq("company", "href", "id", "license", "location", "name", "source")
-    val cityInfo = rawData.select(cityInfoColumnNames.map(c => col(c)): _*)
-    val stationsInfo = rawData.select(col("id") as "city_id",explode(col("stations")) as "station")
-
+    val cityInfo = rawData
+      .select(cityInfoColumnNames.map(c => col(c)): _*)
+    val stationsInfo = rawData
+      .select(col("id") as "city_id",explode(col("stations")) as "station")
 
     val cityInfoQuery = cityInfo.writeStream
       .outputMode("append")
       .format("parquet")
-      .option("path", Constants.CITY_INFO_HDFS_PATH)
-      .option("checkpointLocation", Constants.CITY_CHECKPOINT_PATH)
+      .option("path",
+        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.city}")
+      .option("checkpointLocation",
+        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.cityCheckpoint}")
       .start()
 
      val stationsQuery = stationsInfo.select("city_id", "station.*")
       .writeStream
       .outputMode("append")
       .format("parquet")
-      .option("path", Constants.STATIONS_HDFS_PATH)
-      .option("checkpointLocation", Constants.STATIONS_CHECKPOINT_PATH)
+      .option("path",
+        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.station}")
+      .option("checkpointLocation",
+        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.stationCheckpoint}")
       .start()
 
     cityInfoQuery.awaitTermination()
