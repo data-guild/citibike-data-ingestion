@@ -9,3 +9,6 @@ libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.4.4"
 libraryDependencies += "org.apache.spark" % "spark-streaming-kafka-0-10_2.12" % "2.4.4"
 libraryDependencies += "org.apache.spark" % "spark-sql-kafka-0-10_2.12" % "2.4.4"
 libraryDependencies += "org.apache.spark" % "spark-streaming_2.12" % "2.4.4"
+
+libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.12.1"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.0" % Test
