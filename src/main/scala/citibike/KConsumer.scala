@@ -26,7 +26,7 @@ object KConsumer {
       .option("kafka.bootstrap.servers",
         s"${appConfig.kafka.server}:${appConfig.kafka.port}")
       .option("subscribe", appConfig.topic.name)
-      .option("startingOffsets", "earliest")
+//      .option("startingOffsets", "earliest")
       .load()
 
     val cityStationsSchema = getCityStationsSchema()

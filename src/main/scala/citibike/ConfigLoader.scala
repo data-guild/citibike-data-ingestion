@@ -18,7 +18,7 @@ object ConfigLoader {
 
   def loadConfig(conf:ConfigSource): MyConfig = {
     conf.load[MyConfig] match {
-      case Left (ex) => throw new Exception (ex.toString)
+      case Left (ex) => throw new Exception ("Error loading config" + ex.toString)
       case Right (config) => return config
     }
   }

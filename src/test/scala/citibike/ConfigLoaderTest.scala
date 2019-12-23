@@ -1,7 +1,7 @@
-import citibike._
+package citibike
+
 import org.scalatest.funsuite.AnyFunSuite
 import pureconfig._
-import pureconfig.generic.auto._
 
 class ConfigLoaderTest extends AnyFunSuite {
   test("Load kafka server config") {
@@ -14,6 +14,6 @@ class ConfigLoaderTest extends AnyFunSuite {
     val caught = intercept[Exception] {
       ConfigLoader.loadConfig(appSource)
     }
-    assert(caught.getMessage == "Error loading config")
+    assert(caught.getMessage.startsWith("Error loading config"))
   }
 }
