@@ -12,14 +12,19 @@ class KConsumerTest extends AnyFunSuite with SparkSessionTestWrapper {
     val dataDF = spark
       .read
       .schema(network)
-      .option("multiline", "true")
-      .json("./src/test/data/nyc.json")
+      .option("multiline", "true") // test specific
+      .format("json")
+      .load("./src/test/data/nyc.json")
       .as("data")
       .select("data.network.*")
       .persist()
 
+    dataDF.show()
     assert(dataDF.select("id").first().get(0) == "citi-bike-nyc")
   }
 
-  test
+  test("should save raw json data") {
+    assert(1===1)
+  }
+
 }
