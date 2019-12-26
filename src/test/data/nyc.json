@@ -1,18 +1,17 @@
 {
   "network": {
     "company": [
-      "NYC Bike Share, LLC",
-      "Motivate International, Inc.",
-      "PBSC Urban Solutions"
+      "company a",
+      "company b"
     ],
-    "gbfs_href": "https://gbfs.citibikenyc.com/gbfs/gbfs.json",
+    "gbfs_href": "https://main.html",
     "href": "/v2/networks/citi-bike-nyc",
     "id": "citi-bike-nyc",
     "location": {
       "city": "New York, NY",
       "country": "US",
-      "latitude": 40.7143528,
-      "longitude": -74.00597309999999
+      "latitude": 40.71,
+      "longitude": -74.00
     },
     "name": "Citi Bike",
     "stations": [
@@ -26,11 +25,11 @@
           "uid": "3328"
         },
         "free_bikes": 8,
-        "id": "46a983722ee1f51813a6a3eb6534a6e4",
-        "latitude": 40.795,
-        "longitude": -73.9645,
-        "name": "W 100 St & Manhattan Ave",
-        "timestamp": "2019-12-23T06:50:18.784000Z"
+        "id": "abcdefg",
+        "latitude": 40.7,
+        "longitude": -73.9,
+        "name": "station name",
+        "timestamp": "2019-12-23T06:50:18.00Z"
       }
     ]
   }
