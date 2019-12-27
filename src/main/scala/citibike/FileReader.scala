@@ -16,10 +16,14 @@ object FileReader {
       .master("local[*]")
       .getOrCreate()
 
-    val sdf_parquet = spark.read.parquet(s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.city}")
+    val sdf_parquet = spark
+      .read
+      .parquet(s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.city}")
     sdf_parquet.show()
 
-    val cdf_parquet = spark.read.parquet(s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.station}")
+    val cdf_parquet = spark
+      .read
+      .parquet(s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.station}")
     cdf_parquet.show()
   }
 }

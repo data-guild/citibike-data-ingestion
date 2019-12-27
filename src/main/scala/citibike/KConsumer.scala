@@ -3,7 +3,6 @@ package citibike
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types._
 import pureconfig.ConfigSource
 
 
@@ -13,6 +12,7 @@ object KConsumer {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
     val appConfig = ConfigLoader.loadConfig(ConfigSource.default)
+    val network = CitiBikeSchema.getnetworkStruct()
 
     val spark = SparkSession
       .builder()
@@ -20,28 +20,30 @@ object KConsumer {
       .master("local[*]")
       .getOrCreate()
 
-    val df = spark
+    import spark.implicits._
+
+    val rawData = spark
       .readStream
       .format("kafka")
       .option("kafka.bootstrap.servers",
         s"${appConfig.kafka.server}:${appConfig.kafka.port}")
       .option("subscribe", appConfig.topic.name)
-//      .option("startingOffsets", "earliest")
       .load()
+      .select(from_json(col("value").cast("string"), network)
+        .as("data"))
+      .select($"data.network.*")
 
-    val cityStationsSchema = getCityStationsSchema()
-    val rawData = df
-      .select(from_json(col("value").cast("string"), cityStationsSchema)
-      .as("data"))
-      .select("data.network.*")
-
-    val cityInfoColumnNames = Seq("company", "href", "id", "license", "location", "name", "source")
     val cityInfo = rawData
-      .select(cityInfoColumnNames.map(c => col(c)): _*)
-    val stationsInfo = rawData
-      .select(col("id") as "city_id",explode(col("stations")) as "station")
+      .select($"*", $"location.*")
+      .drop("stations", "location")
 
-    val cityInfoQuery = cityInfo.writeStream
+    val stations = rawData
+      .select($"id" as ("cityID"), explode($"stations"))
+      .select($"cityID", $"col.*", $"col.extra.*")
+      .drop($"extra")
+
+    val cityInfoQuery = cityInfo
+      .writeStream
       .outputMode("append")
       .format("parquet")
       .option("path",
@@ -50,7 +52,7 @@ object KConsumer {
         s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.cityCheckpoint}")
       .start()
 
-     val stationsQuery = stationsInfo.select("city_id", "station.*")
+    val stationsQuery = stations
       .writeStream
       .outputMode("append")
       .format("parquet")
@@ -63,43 +65,5 @@ object KConsumer {
     cityInfoQuery.awaitTermination()
     stationsQuery.awaitTermination()
 
-  }
-
-  def getCityStationsSchema(): StructType = {
-    val stationStruct = (new StructType)
-      .add("id", StringType, false)
-      .add("name", StringType, false)
-      .add("free_bikes", IntegerType, false)
-      .add("empty_slots", IntegerType, false)
-      .add("latitude", DoubleType, false)
-      .add("longitude", DoubleType, false)
-      .add("extra", StringType, true)
-      .add("timestamp", StringType, false)
-
-    val companyStruct = (new StructType)
-      .add("company", new ArrayType(StringType, false), false)
-
-    val licenseStruct = (new StructType)
-      .add("name", StringType, false)
-      .add("url", StringType, false)
-
-    val locationStruct = (new StructType)
-      .add("city", StringType, false)
-      .add("country", StringType, false)
-      .add("latitude", DoubleType, false)
-      .add("longitude", DoubleType, false)
-
-    val netWorkStruct = (new StructType)
-      .add("company", StringType, false)
-      .add("href", StringType, false)
-      .add("id", StringType, false)
-      .add("license", licenseStruct, false)
-      .add("location", locationStruct, false)
-      .add("name", StringType, false)
-      .add("source", StringType, false)
-      .add("stations", new ArrayType(stationStruct, false), false)
-
-    (new StructType)
-      .add("network", netWorkStruct, false)
   }
 }
