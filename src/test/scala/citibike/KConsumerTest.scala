@@ -1,5 +1,7 @@
 package citibike
 
+import java.time.LocalDateTime
+
 import org.scalatest.funsuite.AnyFunSuite
 import CitiBikeSchema._
 import org.apache.spark.sql.functions._
@@ -56,6 +58,7 @@ class KConsumerTest extends AnyFunSuite with SparkSessionTestWrapper {
     val city = dataDF
       .select($"*", $"location.*")
       .drop("stations", "location")
+      .withColumn("timestamp", lit(current_timestamp()) )
 
     assert(city.select($"company").first().get(0) === Array("company a", "company b"))
     assert(city.select($"gbfs_href").first().get(0) === "https://main.html")
@@ -66,6 +69,8 @@ class KConsumerTest extends AnyFunSuite with SparkSessionTestWrapper {
     assert(city.select($"country").first().get(0) === "US")
     assert(city.select($"latitude").first().get(0) === 40.71)
     assert(city.select($"longitude").first().get(0) === -74.00)
+
+    city.show()
 
   }
 

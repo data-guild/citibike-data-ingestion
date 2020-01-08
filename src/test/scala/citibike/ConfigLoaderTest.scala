@@ -11,6 +11,9 @@ class ConfigLoaderTest extends AnyFunSuite {
             server = "localhost"
             port = 9092
         }
+        hdfs-user {
+            user = "tester"
+        }
         hdfs-path {
             root = "home/"
             city = "city-info"
@@ -26,6 +29,7 @@ class ConfigLoaderTest extends AnyFunSuite {
 
     assert(testConfig.kafka.server == "localhost")
     assert(testConfig.kafka.port == 9092)
+    assert(testConfig.hdfsUser.user == "tester")
     assert(testConfig.hdfsPath.root == "home/")
     assert(testConfig.hdfsPath.city == "city-info")
     assert(testConfig.hdfsPath.cityCheckpoint == "checkpoint/city-info")

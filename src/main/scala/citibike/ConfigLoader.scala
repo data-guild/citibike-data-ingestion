@@ -6,9 +6,11 @@ import pureconfig.generic.auto._
 object ConfigLoader {
 
   case class MyConfig (kafka: Kafka,
+                       hdfsUser: HdfsUser,
                        hdfsPath: HdfsPath,
                        topic: KTopic)
   case class Kafka (server: String, port: Int)
+  case class HdfsUser (user: String)
   case class HdfsPath( root: String,
                        city: String,
                        cityCheckpoint: String,

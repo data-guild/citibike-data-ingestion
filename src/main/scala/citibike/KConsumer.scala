@@ -36,6 +36,7 @@ object KConsumer {
     val cityInfo = rawData
       .select($"*", $"location.*")
       .drop("stations", "location")
+      .withColumn("timestamp", lit(current_timestamp()) )
 
     val stations = rawData
       .select($"id" as ("cityID"), explode($"stations"))
@@ -47,9 +48,9 @@ object KConsumer {
       .outputMode("append")
       .format("parquet")
       .option("path",
-        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.city}")
+        s"${appConfig.hdfsPath.root}/user/${appConfig.hdfsUser.user}/${appConfig.hdfsPath.city}")
       .option("checkpointLocation",
-        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.cityCheckpoint}")
+        s"${appConfig.hdfsPath.root}/user/${appConfig.hdfsUser.user}/${appConfig.hdfsPath.cityCheckpoint}")
       .start()
 
     val stationsQuery = stations
@@ -57,9 +58,9 @@ object KConsumer {
       .outputMode("append")
       .format("parquet")
       .option("path",
-        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.station}")
+        s"${appConfig.hdfsPath.root}/user/${appConfig.hdfsUser.user}/${appConfig.hdfsPath.station}")
       .option("checkpointLocation",
-        s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.stationCheckpoint}")
+        s"${appConfig.hdfsPath.root}/user/${appConfig.hdfsUser.user}/${appConfig.hdfsPath.stationCheckpoint}")
       .start()
 
     cityInfoQuery.awaitTermination()

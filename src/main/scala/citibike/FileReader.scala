@@ -18,12 +18,12 @@ object FileReader {
 
     val sdf_parquet = spark
       .read
-      .parquet(s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.city}")
+      .parquet(s"${appConfig.hdfsPath.root}/user/${appConfig.hdfsUser.user}/${appConfig.hdfsPath.city}")
     sdf_parquet.show()
 
     val cdf_parquet = spark
       .read
-      .parquet(s"${appConfig.hdfsPath.root}${appConfig.hdfsPath.station}")
+      .parquet(s"${appConfig.hdfsPath.root}/user/${appConfig.hdfsUser.user}/${appConfig.hdfsPath.station}")
     cdf_parquet.show()
   }
 }
