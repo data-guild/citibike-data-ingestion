@@ -11,7 +11,7 @@ object CitiBikeSchema {
     .add("empty_slots", IntegerType, false)
     .add("latitude", DoubleType, false)
     .add("longitude", DoubleType, false)
-    .add("timestamp", StringType, false)
+    .add("timestamp", TimestampType, false)
 
   val extraInfo = (new StructType)
     .add("address", StringType, true)

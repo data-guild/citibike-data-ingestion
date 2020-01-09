@@ -36,12 +36,12 @@ object KConsumer {
     val cityInfo = rawData
       .select($"*", $"location.*")
       .drop("stations", "location")
-      .withColumn("timestamp", lit(current_timestamp()) )
+      .withColumn("time_stamp", lit(current_timestamp()) )
 
     val stations = rawData
       .select($"id" as ("cityID"), explode($"stations"))
-      .select($"cityID", $"col.*", $"col.extra.*")
-      .drop($"extra")
+      .select($"cityID", $"col.timestamp" as ("time_stamp"), $"col.*", $"col.extra.*")
+      .drop("extra", "timestamp")
 
     val cityInfoQuery = cityInfo
       .writeStream
